@@ -1,6 +1,45 @@
 import pickle
 import numpy as np
 from KNN import KNN
+
+"""
+En el nostre codi, si per exemple tenim que busquem k = 3, i diem que dos veins son la mateixa peça de roba i 1 dels veins es diferent, surtira guanyannt el label que ha sortit mes, tot i aixo, aquesta metodologia/algorisme pot resultar en resutlats incorrctes/erronis.
+Per corregir-ho: votació ponderada, el vto de cada vei valgui mes com a mes a prop estigui:
+un vei molt aprop tindra una dsitancia euclidiana molt petita, epr tant la seva inversa sera un valor gran: 1/distancia
+un vei llunya tindra una distancia euclidinaa bastant gran, de amera que la seva inversa sera petita.
+A continuacio tenim la funcio:
+"""
+def Get_class_weighted(knn):
+"""
+A continuacio explicarem que es el que fa cada part de la funcio:
+primerament recurrem per l'array de 2 dimensions: passem per cada test_imgs i obtenim els seus k veins
+despres a continaucio obtenim les distancies euclidiandes respecte la imatge test que estem observant en la itearció concreta del for loop
+despres a continaucio es construeix un array que es diu pesos, que te tots els pesos de tots els k veins
+despres es genera una classe_unique, que es una llista sense labels repetits.
+s'inicialitzen dos variables per poder anar actualitzant la classe amb mes ponderacio i amb pes maxim
+Dins del segon for loop iterem per tots els elements dels labels unics que hem definit abans
+sumem tots els pesos que son iguals a la classe/etiqueta que estem observant en el moment
+mirem si el pes total suera el maxim_pes
+si es que si la millor_classe  es actualitzada.
+al final retornem un array que conté les millor classes segons el seu valor ponderat de l'algorise definit dins de la funcio
+
+"""
+
+	for i in range(len(knn.neighbors)):
+		veins_actuals = knn.neighbors[i]
+		distancies_actuals = knn.distancies[i]
+		pesos = 1.0/(distancies_actuals+1e-5) # el 1e-5 es per un cas especific: si un valor de distancies_actuals equival a zero, feriem una divisio per zero, que ens donaria error/undefined
+		classes_unique = np.unique(viens_actuals)
+		millor_classe = None
+		maxim_pes = -1
+		for c in classes_unique:
+			pes_total_classe = np.sum(pesos[veins_actuals == c])
+			if pes_total_classe>maxim_pes:
+				maxim_pes = pes_total_classe
+				millor_classe = c
+		preds.append(millor_classe)
+	return np.array(preds)
+
 #enrecroda que train_data es un array de 3 dimensions: la primera dimensio es la imatge i les 2 altres es el grid gris de la imatge: 28x28
 #per mimllorar el programa podem reduir la mida de totes les imatges, tot i aixo cal tenir en compte que la reducció s'ha d'aplicar sobre les imatges supervisades com les imatges de test.
 def reduce_features(images):

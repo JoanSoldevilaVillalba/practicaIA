@@ -24,7 +24,8 @@ class KNN:
         index_ordenats = np.argsort(distancies, axis=1)[:, :k]
         self.neighbors = self.labels[index_ordenats]
         self.neighbour_index = index_ordenats
-
+	self.distancies = distancies
+	#aqui haurem de definir un nou atribut de la class KNN
     def get_class(self):
         P_test = self.neighbors.shape[0]
         predictions = np.empty(P_test, dtype=self.labels.dtype)

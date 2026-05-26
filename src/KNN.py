@@ -4,13 +4,15 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from scipy import stats
 
+
 class KNN:
     def __init__(self, train_data, labels):
         self._init_train(train_data)
         self.labels = np.array(labels)
 
     def _init_train(self, train_data):
-           self.train_data = train_data.reshape(train_data.shape[0], -1).astype(np.float64)
+        self.train_data = train_data.reshape(
+            train_data.shape[0], -1).astype(np.float64)
 
     def get_k_neighbours(self, test_data, k):
         if len(test_data.shape) > 2:
@@ -19,23 +21,18 @@ class KNN:
             test_data_flat = test_data.astype(np.float64)
 
         distancies = cdist(test_data_flat, self.train_data, metric='euclidean')
-        
         index_ordenats = np.argsort(distancies, axis=1)[:, :k]
-        
         self.neighbors = self.labels[index_ordenats]
+        self.neighbour_index = index_ordenats
 
     def get_class(self):
         P_test = self.neighbors.shape[0]
         predictions = np.empty(P_test, dtype=self.labels.dtype)
-
         for i in range(P_test):
             veins_actuals = self.neighbors[i]
-            
             valors, comptes = np.unique(veins_actuals, return_counts=True)
             max_vots = np.max(comptes)
-            
             guanyadors = valors[comptes == max_vots]
-            
             if len(guanyadors) > 1:
                 for v in veins_actuals:
                     if v in guanyadors:
@@ -43,7 +40,6 @@ class KNN:
                         break
             else:
                 predictions[i] = guanyadors[0]
-                
         return predictions
 
     def predict(self, test_data, k):

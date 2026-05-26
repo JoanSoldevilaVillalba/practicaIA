@@ -41,7 +41,7 @@ class KNN:
                         break
             else:
                 predictions[i] = guanyadors[0]
-        return predictions
+	return predictions
 
     def predict(self, test_data, k):
         self.get_k_neighbours(test_data, k)

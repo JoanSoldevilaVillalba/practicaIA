@@ -1,145 +1,246 @@
-import pickle
+import pickle 
 import numpy as np
 from KNN import KNN
 
-"""
-En el nostre codi, si per exemple tenim que busquem k = 3, i diem que dos veins son la mateixa peça de roba i 1 dels veins es diferent, surtira guanyannt el label que ha sortit mes, tot i aixo, aquesta metodologia/algorisme pot resultar en resutlats incorrctes/erronis.
-Per corregir-ho: votació ponderada, el vto de cada vei valgui mes com a mes a prop estigui:
-un vei molt aprop tindra una dsitancia euclidiana molt petita, epr tant la seva inversa sera un valor gran: 1/distancia
-un vei llunya tindra una distancia euclidinaa bastant gran, de amera que la seva inversa sera petita.
-A continuacio tenim la funcio:
-"""
+
+def reducte_size(images):
+	#aquesta funcio nomes redueix ell el numero de pixels que processem, millorant llavors l'eficiencia de l'algorisme pero perdent detall de les imatges.
+	return images[:,::2,::2]
+
 def Get_class_weighted(knn):
-"""
-A continuacio explicarem que es el que fa cada part de la funcio:
-primerament recurrem per l'array de 2 dimensions: passem per cada test_imgs i obtenim els seus k veins
-despres a continaucio obtenim les distancies euclidiandes respecte la imatge test que estem observant en la itearció concreta del for loop
-despres a continaucio es construeix un array que es diu pesos, que te tots els pesos de tots els k veins
-despres es genera una classe_unique, que es una llista sense labels repetits.
-s'inicialitzen dos variables per poder anar actualitzant la classe amb mes ponderacio i amb pes maxim
-Dins del segon for loop iterem per tots els elements dels labels unics que hem definit abans
-sumem tots els pesos que son iguals a la classe/etiqueta que estem observant en el moment
-mirem si el pes total suera el maxim_pes
-si es que si la millor_classe  es actualitzada.
-al final retornem un array que conté les millor classes segons el seu valor ponderat de l'algorise definit dins de la funcio
+
 
 """
+Aquesta funcio serveix per poder corregir un error tipic de knn: votació per majoria erronia.
+Si tenim que una imatge te una distancia euclidiana mes propera, li afegim mes pes que dos imatges que no estan molt aprop pero que son de la mateixa classe(abans soritira error, perque es feia per vot de majoria, pero aixo s'elimina amb ponderació)
+"""
+#cal tenir en compte que ja es fa tot suposant que s'han carregat els veins i els seus labels.
 
+	preds = []
 	for i in range(len(knn.neighbors)):
+		#the first for loop iterates untill we have gone threw each test_img and its neighbours
 		veins_actuals = knn.neighbors[i]
+		#cal enrecordar que neighbours es una matriu de dos dimensions, on les files represten diferentes imatges i les columnes son els diferents labels dels k veins que hem trobat
+		#distancies_actuals guarda les distancies euclidinaes de tots els k veins de totes les imates de test_imgs
 		distancies_actuals = knn.distancies[i]
-		pesos = 1.0/(distancies_actuals+1e-5) # el 1e-5 es per un cas especific: si un valor de distancies_actuals equival a zero, feriem una divisio per zero, que ens donaria error/undefined
-		classes_unique = np.unique(viens_actuals)
+		#calculem el seu pes ponderat: 1/distancia euclidiana for each preediction of the imaeg that we are looking at right now
+		#pesos is going to be an array that contains the "pes ponderat" for each label, taking into account the euclidean distance between the current neighbour and the test_img that we are on right now
+		pesos = 1.0/(distancies_actuals + 1e-5)
+		#we go through the hole matrice and now we have a one dimension array that contains all of the labels that have appeared in all predictions of all test_imgs
+		classes_unique = np.unique(veins_actuals)
 		millor_classe = None
 		maxim_pes = -1
+		#we go through each class
 		for c in classes_unique:
-			pes_total_classe = np.sum(pesos[veins_actuals == c])
-			if pes_total_classe>maxim_pes:
+			#sumem els pesos ponderats de tots els elements on veins_actuals (labels) son equivalents al label que estem mirant en el for loop, si es superior al maxim que hem vist fins ara s'actauliza
+			pes_total_classe = np.sum(pesos[veins_actuals==c])
+			if pes_total_classe > maxim_pes:
 				maxim_pes = pes_total_classe
-				millor_classe = c
+				millor_classe=c
 		preds.append(millor_classe)
+
+	#al final es retorna un array de dimensio len(test_imgs) que conté el label ponderat
 	return np.array(preds)
 
-#enrecroda que train_data es un array de 3 dimensions: la primera dimensio es la imatge i les 2 altres es el grid gris de la imatge: 28x28
-#per mimllorar el programa podem reduir la mida de totes les imatges, tot i aixo cal tenir en compte que la reducció s'ha d'aplicar sobre les imatges supervisades com les imatges de test.
-def reduce_features(images):
-# la implementacio de la funcio es molt simple: primerament cal agafar totes les imatges(:,), despres per l'alçada i amplada anem saltant de dos en dos, de manera que es fa una reducció de factor de 4 en la imatge.
-# d'aquesta manera al processar les imatges podrem anar mes rapid. Despres mirarem si aixo empitjora molt a la precisio de l'algorisme o no
-	return images[:, ::2, ::2]
+def Get_shape_accuracy_weigted(knn, test_imgs, test_labels, k):
+
+	knn.get_k_neighbours(test_imgs, k)
+
+	preds = Get_class_weighted(knn)
+
+	number_of_accurates = np.sum(preds == test_labels)
+
+	accuracy = number_of_accurates/len(test_labels)
+
+	return (accuracy, preds)
+
+
 def Get_shape_accuracy(knn, test_imgs, test_labels, k):
-	"""
-	Explicacio dels parametres de la funcio Get_shape_accuracy
-		knn: objecte que te les imatges supervisades ja preparades
-		test_imgs: son les imatges que aplicarem sobre l'algorisme per veure si l'algorisme es precis o no
-		test_labels: son les etiquetes/classes correctes de les imatges
-	"""
-	#primerament cridem la funció get_k_neigubours per calcular els k veins mes propers.
-	#a continuacio obtenim la prediccio final que ha calculat l'algorsme, es a dir, el vei mes proper a cadascuna de les imatges dins de test_imgs
-	#despres es calcula el percentatge d'encerts.
+	#aquesta funcio ens serveix per determinar si les prediccions son certes o falses
+	#primer calculem les prediccions que genera l'algorisme KNN i les guardem: una matriu de 2 dimensions, on cada fila té k columnes i cada fila és una imatge de test_imgs
 	knn.get_k_neighbours(test_imgs, k)
 	preds = knn.get_class()
+	#despres d'obtenir les prediccions, mirem si el que s'ha calculat és equivalent a test_labels(les classes/etiquetes verdaderes)
+
+	#enrecorda que dins de preds és un array de numpy 1 dimensió on cada index correspont a una imatge de test_imgs
+	#en la instrucció seguent es realitza una comparació element per element entre el que s'ha predit i les classes reals de les imatges de test.
 	number_of_accurates = np.sum(preds == test_labels)
-	accuracy = number_of_accurates / len(test_labels)
-	print("number of accurate predictions: ", number_of_accurates)
-	print(f"K: {k}, Accuracy: {accuracy}")
-	return accuracy
-def Get_shape_accuracy_diversos(knn, test_imgs, test_labels):
-	#aquesta funcio es equivalent a Get_shape_accuracy pero en comptes de passar un k com a parametre, es realitza un for loop per veure com va evolucionant la precisió de l'algorisme a mesura que anem incrementant el rang de veins
-	for k in range(1, 50):
+	#dins de number_of_accurates tenim ja la suma dels True
+	#al final ho dividim tot entre el numero d'elements dins de test_labels
+	accuracy = number_of_accurates/len(test_labels)
+	return (accuracy, preds)
+
+
+def Get_shape_accuracy_diversos(knn, test_imgs, test_labels, minim, maxim):
+	#aquetsa funcio, com ja comentat en el main, es similar a Get_shape_accuracy, pero en comptes de passar una k, es realiza un for loop per veure com va variant la precisió de l'algorsime a mesura que va incrementant el rang de veins que nosatlres acceptem
+	list_return  = []
+	for k in range(minim, maxim):
 		knn.get_k_neighbours(test_imgs, k)
 		preds = knn.get_class()
 		number_of_accurates = np.sum(preds == test_labels)
 		accuracy = number_of_accurates / len(test_labels)
-		print("number of accurate predictions: ", number_of_accurates)
-		print(f"K: {k}, Accuracy: {accuracy}")
+		packet = (k, accuracy)
+		list_return.append(packet)
+	return list_return
 
-def Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, min_percentage=0.0):
-	"""
-	A continuacio expliquem tots els parametres de la funcio Retrival_by_shape:
-	primerament l'objete Knn, on ja tenim les imatges supervisades ja processades i preparades per ser utitliades
-	train_imgs, llista de imatges ja processades, test_imgs les imatges de prova
-	query_string conté l'etiqueta/classe que volem detectar
-	k, el numero de veins que volem, es a dir, la precissio que volem
-	min_percentatge, es el minim de percentatge que nosatlres podem acceptar.
-	"""
+def Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, min_percentatge):
+
+	#primermaent carregeum els veins i les prediccions de l'algorisme
+	#despres a continaucio es crea un array de np amb les prediccions uniques: nomes un de cada
 	knn.get_k_neighbours(test_imgs, k)
 	predictions = knn.get_class()
-	#fins aqui, tenim ja els veins de tots els test_imgs i les prediccions, es a dir, els labels que hem pogut identificar de cada image de test_imgs utitlizant el nostre algorisme.
 	unique_classes = np.unique(predictions)
-	print("Classes predicted in this batch:", unique_classes)
+	print("Classes predicted in this batch:", unique_classes) 
 	print("Searching for class:", query_string)
 	retrieved_results = []
-	#passem per totes les prediccions que hem fet, es a dir, passem per totes els test_img
+	#aquesta funcio es basa en trobar quina de les prediccions equival al query_string i obtenir les imatges que superen un minim de percentatge segons els veins de la imatge test.
+	#passem per totes les prediccions
+	#si la prediccio en curs es igual a query_string, entrem dins del if, hem trobat un cas equivalent
 	for i in range(len(predictions)):
-	#en el cas que es igual a query_string, entrem dins del if statment
 		if predictions[i] == query_string:
-	#obtenim els labels dels veins que nosaltres hem trobat
-	#sumem aquells veins que hem trobat que equivalen al query_string per obtenir el percentatge
+			#despres de trobar una prediccio igual a query_string, obtenim tots els altres veins que l'algorisme ha trobat
+			#es mira quins son els vots coincidents/vots que son igual al query_string
+			#i finalment calculem el percentatge de vots que son equivalents a query_string
 			veins_actuals = knn.neighbors[i]
 			vots_coincidents = np.sum(veins_actuals == query_string)
 			percentatge = vots_coincidents / k
-	#si el percentatge cau dins del minim, el podem afegir dins de la llista final
-	#la llista final es una llista de tuples, on cada tuple es una test_img que ha superat el percentatge minim
-	#cada tule conte el seguent:
-	#primer element: els pixels de la image que estem provant (test_img)
-	#segon element: el label que l'algorisme dissenyat ha assignat
-	#tercer element: neighbour_images, una llista de les k imatges (pixels)
-	#quart: percentatge, es a dir, el percentatge de les k imatges que son iguals al query_string
-	#anem a afegir un cinque: els labels dels veins, per veure de quines classes pertayen per veure el percenatge d'una menra mes visual, aixo es nomes obtenir els veisn calculats d'aquest element:  self.neighbors = self.labels[index_ordenats]
-	#tot i aixo, cal tenir en compte que potser la prediccio que ha retornat l'algorisme tampoc es correcta tot i que hem entrat dins del if statment
-			if percentatge >= min_percentage:
+			#es mira si el percentatge supera el minim, si es que si es prepara la tuple amb el contingut seguent:
+			#tuple:
+			#la imatge de test corresponent, l'etiqueta que s'ha preduit, totse les imatges veines a test_imgs[i], el percentatge i els labels de les imatges veines de test_imgs[i]
+			if percentatge >= min_percentatge:
 				indices_of_predictions = knn.neighbour_index[i]
 				neighbour_images = train_imgs[indices_of_predictions]
 				image_pack = (test_imgs[i], predictions[i], neighbour_images, percentatge,knn.neighbors[i])
 				retrieved_results.append(image_pack)
+
+
+	#al final ho retornem tot organitzat tenint en compte el tercer element: percentatge
+	#cal enrecordar que aquesta funcio nomes retorna els casos on la predicció de l'algorsime resulta en query_string i si es supera el treshold the min_percentatge (resta de veins)
+	#tambe cal tenir en compte que si la predicció obtinguda es erronia pero igualment equivalent a query_string, obtindrem resutlats erronis. No es que tenim un problema en la impelmentació
+	#... d'aquesta funció, sinó en el propi algorisme de KNN: s'arrosegua un possible error en l'algorisme KNN. Tot i aixo hem definit una funció que permetrà corregir o al meny intentar corregir aquest possible error del knn: Get_class_weighted
+
 	retrieved_results.sort(key=lambda x: x[3], reverse=True)
 	return retrieved_results
+
 if __name__ == "__main__":
+
+	#a continuacio definim el main basic pel knn.
+	#primerament a partir del fitxer test_cases_knn.pkl, carreguem tot el contignut de les iamtges/etiquetes
+	#obtenim les imatges supervisades/les que ja estan etiquetades
+	#obtenim les imatges de test per comprovar l'algorisme
+	#a part de les dades/pixels de les imatges, també obtenim les seves etiquetes corresponents
 	with open('../test/test_cases_knn.pkl', 'rb') as f:
 		test_cases = pickle.load(f)
 	train_imgs = test_cases['input'][0][0]
 	train_labels = test_cases['input'][0][1]
 	test_imgs = test_cases['test_input'][0][0]
-	test_labels = test_cases['get_class'][0]
-	knn = KNN(train_imgs, train_labels)
-#	Get_shape_accuracy(knn, test_imgs, test_labels)
-	print("\nA continuacio ve el procés que realment volem comprovar")
-	print("The labels of the test_images: ")
-	for element in test_labels:
-		print("image label: ", element)
+	test_labels  = test_cases['get_class'][0]
 
-	print("label that we have chosen:", test_labels[0])
-	print("Percentatge of acceptance:", 0.0)
-	print("number of neighbours",3)
-	image_pack_list = Retrieval_by_shape(knn, train_imgs, test_imgs, test_labels[0], 3, 0.0)
-	print("Resultat de retrieval_by_shape obtingut correctament. Mida de la llista:", len(image_pack_list))
-	for element in image_pack_list:
-		test_img, prediction, neighbour_images, percentatge, list_of_labels = element
-		print("-" * 50)
-		print(f"Classe predita / cercada: {prediction}")
-		print(f"Certesa de la votació (percentatge): {percentatge * 100:.2f}%")
-		print(f"Mida de la imatge de test (shape): {test_img.shape}")
-		print(f"Quantitat de veïns retornats en el pack: {len(neighbour_images)}")
-		print(f"Mida de la matriu de veïns: {neighbour_images.shape}")
-		print("llista de les classes dels k veins: ")
-		print(list_of_labels)
+	#a continuacio es crea l'objecte knn:
+	knn = KNN(train_imgs, train_labels)
+
+	#a continuacio presentem les imatges de test:
+
+	for class_image in test_labels:
+		print("image label:",class_image)
+
+	#a continuacio tenim el codi per veure el resultat de les funcions que nosaltres hem implementat
+
+	#Get_shape_accuracy
+
+	print("TESTING Get_shape_accuracy")
+
+	k = 3
+
+	accuracy_defined_k, predictions = Get_shape_accuracy(knn, test_imgs, test_labels, k)
+
+	print("We are testing the following images with the corresponding labels")
+
+	print("accuracy:", accuracy_defined_k)
+
+	print("labels: ")
+
+	for real_label, predicted_label in  zip(test_labels, predictions):
+
+		print(f'real label: {real_label} i la seva predicció: {predicted_label}')
+
+
+
+
+	#Get_shape_accuracy_diversos
+
+	print("TESTING Get_shape_accuracy_diversos")
+
+	#hem definit una segona funcio, similar a Get_shape_accuracy, pero en comptes de passar sempre el numero de veins que volem per cada imatge de test, dins de la funcio tenim un for loop que va recurrent
+	#... entre 1 i 50: aquesta funcio ens permet visualitzar com va variant la precisió dins del for loop a mesura que el rang de veins que acceptem va incrementant
+
+	#la funcio retorna una llista de tuples, on en cada tuple tenim el valor k i la precisió calculada
+
+	minim = 1
+
+	maxim = 50
+
+	list_accuracy_diversos = Get_shape_accuracy_diversos(knn, test_imgs, test_labels, minim, maxim)
+
+	for element_k, element_p in list_accuracy_diversos:
+
+		print(f'valor k: {element_k}, precisió: {element_p}')
+
+
+
+	#Retreival_by_shape:
+
+	print("TESTING Retreival_by_shape")
+
+	#definicio dels paramtres per Retieval_by_shape:
+
+	query_string = test_labels[2] #el valor que escollim pot ser qualsevol
+
+	percentatge_minimum = 0.0
+
+	k = 3
+
+	image_packet = Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, percentatge_minimum)
+
+	for raw_test, label_prediction,raw_neighbour, precision, label_neighbours in image_packet:
+		print(f"  - Imatge de test predita com a '{label_prediction}' amb una coincidència del {precision*100:.1f}%")
+	        print(f"    Els seus veïns han estat etiquetats com: {label_neighbours}")
+
+
+	#Get_class_weighted
+
+	print("TESTING Get_class_weighted")
+
+	#primer cal prepara els neighbours i les distancies euclidianes per poder cirdar Get_class_weighted
+
+	k = 3
+
+	knn.get_k_neighbours(test_imgs,k)
+
+	#no cal cridar .get_class, ja hem carregat els veins
+	array_prediccions_weighted = Get_class_weighted(knn)
+
+	#array_prediccions es un array de una dimensio, on cada index correspont per cada imatge
+
+	for element_pes, temporal_label in zip(array_prediccions_weighted,test_labels):
+
+		print(f'weighted prediction: {element_pes}, real class: {temporal_label}')
+
+
+	#ara caldra fer un analasi de comparacio entre weighted i sense pes euclidia
+	#per poder fer aixo, cal primer calcular la precisió del weighted
+	for k in range(50):
+
+		normal_accuracy, normal_prediction = Get_shape_accuracy(knn, test_imgs, test_labels, k)
+
+		weighted_accuracy, weighted_prediction = Get_shape_accuracy_weigted(knn, test_imgs, test_labels, k)
+
+		i = 0
+
+		for normal, weighted in zip(normal_accuracy, weighted_accuracy):
+
+			print("accuracy without any weight: ", normal)
+			print("prediction without any weight:", normal_prediction[i])
+			print("accuracy with weight: ", weighted)
+			print("prediction with weight: ", weighted_prediction[i])
+			print("the actual real label: ", test_labels[i])

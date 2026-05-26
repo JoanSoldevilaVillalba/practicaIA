@@ -1,7 +1,12 @@
 import pickle
 import numpy as np
 from KNN import KNN
-
+#enrecroda que train_data es un array de 3 dimensions: la primera dimensio es la imatge i les 2 altres es el grid gris de la imatge: 28x28
+#per mimllorar el programa podem reduir la mida de totes les imatges, tot i aixo cal tenir en compte que la reducció s'ha d'aplicar sobre les imatges supervisades com les imatges de test.
+def reduce_features(images):
+# la implementacio de la funcio es molt simple: primerament cal agafar totes les imatges(:,), despres per l'alçada i amplada anem saltant de dos en dos, de manera que es fa una reducció de factor de 4 en la imatge.
+# d'aquesta manera al processar les imatges podrem anar mes rapid. Despres mirarem si aixo empitjora molt a la precisio de l'algorisme o no
+	return images[:, ::2, ::2]
 def Get_shape_accuracy(knn, test_imgs, test_labels, k):
 	"""
 	Explicacio dels parametres de la funcio Get_shape_accuracy

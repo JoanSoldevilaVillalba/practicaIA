@@ -16,7 +16,8 @@ class KNN:
 
     def get_k_neighbours(self, test_data, k):
         if len(test_data.shape) > 2:
-            test_data_flat = test_data.reshape(test_data.shape[0], -1).astype(np.float64)
+            test_data_flat = test_data.reshape(
+                test_data.shape[0], -1).astype(np.float64)
         else:
             test_data_flat = test_data.astype(np.float64)
 
@@ -24,8 +25,11 @@ class KNN:
         index_ordenats = np.argsort(distancies, axis=1)[:, :k]
         self.neighbors = self.labels[index_ordenats]
         self.neighbour_index = index_ordenats
-	self.distancies = distancies
-	#aqui haurem de definir un nou atribut de la class KNN
+        distancies_ordenades = np.sort(distancies, axis=1)[:, :k]
+        self.distancies = distancies_ordenades
+        # aqui haurem de definir un nou atribut de la class KNN
+        # cal tenir en compte diverses coses, primerament index_ordenats esta en un ordre completament diferent que els veins
+
     def get_class(self):
         P_test = self.neighbors.shape[0]
         predictions = np.empty(P_test, dtype=self.labels.dtype)
@@ -41,7 +45,7 @@ class KNN:
                         break
             else:
                 predictions[i] = guanyadors[0]
-	return predictions
+        return predictions
 
     def predict(self, test_data, k):
         self.get_k_neighbours(test_data, k)

@@ -153,8 +153,8 @@ if __name__ == "__main__":
     acc_red_normal, acc_red_weighted = [], []
 
     print("--- EXECUTANT EXPERIMENTS ---")
-    k_range = range(1,3)
-    for k in (1, 3):
+    k_range = range(1,50)
+    for k in (1, 50):
         acc_n, _ = Get_shape_accuracy(knn_orig, test_imgs, test_labels, k)
         print("s'ha carregat acc_n")
         acc_w, _ = Get_shape_accuracy_weigted(

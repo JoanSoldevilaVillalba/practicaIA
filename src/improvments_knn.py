@@ -2,10 +2,12 @@ import pickle
 import numpy as np
 from KNN import KNN
 
+
+#caldra modificar una mica el codi: dins de cada funcio es calcula de manera repetida les prediccions de les imatges de test_imgs, no es necessari fer aixo, només cal fer-ho un cop dins del main (if __name__=="__main__")
+#aquesta modificació no es fa pero dins de Get_class_weighted, ja que aplica l'algorisme knn amb pes ponderat, no vot majoritari; també Get_shape_accuracy_weighted
 def reducte_size(images):
     # aquesta funcio nomes redueix ell el numero de pixels que processem, millorant llavors l'eficiencia de l'algorisme pero perdent detall de les imatges.
     return images[:, ::2, ::2]
-
 
 def Get_class_weighted(knn):
     """
@@ -58,8 +60,12 @@ def Get_shape_accuracy_weigted(knn, test_imgs, test_labels, k):
 def Get_shape_accuracy(knn, test_imgs, test_labels, k):
     # aquesta funcio ens serveix per determinar si les prediccions son certes o falses
     # primer calculem les prediccions que genera l'algorisme KNN i les guardem: una matriu de 2 dimensions, on cada fila té k columnes i cada fila és una imatge de test_imgs
+
+
     knn.get_k_neighbours(test_imgs, k)
     preds = knn.get_class()
+
+
     # despres d'obtenir les prediccions, mirem si el que s'ha calculat és equivalent a test_labels(les classes/etiquetes verdaderes)
 
     # enrecorda que dins de preds és un array de numpy 1 dimensió on cada index correspont a una imatge de test_imgs
@@ -89,8 +95,12 @@ def Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, min_percenta
 
     # primermaent carregeum els veins i les prediccions de l'algorisme
     # despres a continaucio es crea un array de np amb les prediccions uniques: nomes un de cada
+
+
     knn.get_k_neighbours(test_imgs, k)
     predictions = knn.get_class()
+
+
     unique_classes = np.unique(predictions)
     print("Classes predicted in this batch:", unique_classes)
     print("Searching for class:", query_string)
@@ -126,6 +136,8 @@ def Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, min_percenta
 
 
 if __name__ == "__main__":
+    #abans de fer les comparaacions entre els diferents models de knn, cal carregar les dades sense pickle
+    
 
     # a continuacio definim el main basic pel knn.
     # primerament a partir del fitxer test_cases_knn.pkl, carreguem tot el contignut de les iamtges/etiquetes
@@ -142,6 +154,8 @@ if __name__ == "__main__":
     # a continuacio es crea l'objecte knn:
     knn = KNN(train_imgs, train_labels)
 
+    #a continuacio fem els calculs per les prediccions del model normal
+
     # a continuacio presentem les imatges de test:
 
     for class_image in test_labels:
@@ -155,8 +169,7 @@ if __name__ == "__main__":
 
     k = 3
 
-    accuracy_defined_k, predictions = Get_shape_accuracy(
-        knn, test_imgs, test_labels, k)
+    accuracy_defined_k, predictions = Get_shape_accuracy(knn, test_imgs, test_labels, k)
 
     print("We are testing the following images with the corresponding labels")
 
@@ -200,8 +213,7 @@ if __name__ == "__main__":
 
     k = 3
 
-    image_packet = Retrieval_by_shape(
-        knn, train_imgs, test_imgs, query_string, k, percentatge_minimum)
+    image_packet = Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, percentatge_minimum)
 
     for raw_test, label_prediction, raw_neighbour, precision, label_neighbours in image_packet:
 
@@ -272,10 +284,8 @@ if __name__ == "__main__":
 
     # 3. Executem el bucle per calcular les precisions amb dades reduïdes
     for k in range(1, 50):
-        r_normal_accuracy, _ = Get_shape_accuracy(
-            knn_reduced, test_imgs_reduced, test_labels, k)
-        r_weighted_accuracy, _ = Get_shape_accuracy_weigted(
-            knn_reduced, test_imgs_reduced, test_labels, k)
+        r_normal_accuracy, _ = Get_shape_accuracy(knn_reduced, test_imgs_reduced, test_labels, k)
+        r_weighted_accuracy, _ = Get_shape_accuracy_weigted(knn_reduced, test_imgs_reduced, test_labels, k)
 
         accuracies_reduced_normal.append(r_normal_accuracy)
         accuracies_reduced_weighted.append(r_weighted_accuracy)
@@ -288,9 +298,6 @@ if __name__ == "__main__":
     for idx, k in enumerate(range(1, 50)):
         print(
             f"{k:<5} | {accuracies_normal[idx]:<12.4f} | {accuracies_weighted[idx]:<14.4f} | {accuracies_reduced_normal[idx]:<12.4f} | {accuracies_reduced_weighted[idx]:<14.4f}")
-    # =========================================================================
-    # VISUALITZACIÓ GRÀFICA AMB MATPLOTLIB
-    # =========================================================================
     print("\n--- GENERANT GRÀFIQUES DE COMPARACIÓ ---")
     import matplotlib.pyplot as plt
 

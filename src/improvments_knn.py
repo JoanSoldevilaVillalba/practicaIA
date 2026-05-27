@@ -1,13 +1,17 @@
 import pickle
 import numpy as np
+# per poder carregar raelment les imatges, no utiltizar el fitxer amb les imatges ja processades.
+from utils_data import read_dataset
 from KNN import KNN
+import matplotlib.pyplot as plt
 
 
-#caldra modificar una mica el codi: dins de cada funcio es calcula de manera repetida les prediccions de les imatges de test_imgs, no es necessari fer aixo, només cal fer-ho un cop dins del main (if __name__=="__main__")
-#aquesta modificació no es fa pero dins de Get_class_weighted, ja que aplica l'algorisme knn amb pes ponderat, no vot majoritari; també Get_shape_accuracy_weighted
+# caldra modificar una mica el codi: dins de cada funcio es calcula de manera repetida les prediccions de les imatges de test_imgs, no es necessari fer aixo, només cal fer-ho un cop dins del main (if __name__=="__main__")
+# aquesta modificació no es fa pero dins de Get_class_weighted, ja que aplica l'algorisme knn amb pes ponderat, no vot majoritari; també Get_shape_accuracy_weighted
 def reducte_size(images):
     # aquesta funcio nomes redueix ell el numero de pixels que processem, millorant llavors l'eficiencia de l'algorisme pero perdent detall de les imatges.
     return images[:, ::2, ::2]
+
 
 def Get_class_weighted(knn):
     """
@@ -61,10 +65,8 @@ def Get_shape_accuracy(knn, test_imgs, test_labels, k):
     # aquesta funcio ens serveix per determinar si les prediccions son certes o falses
     # primer calculem les prediccions que genera l'algorisme KNN i les guardem: una matriu de 2 dimensions, on cada fila té k columnes i cada fila és una imatge de test_imgs
 
-
     knn.get_k_neighbours(test_imgs, k)
     preds = knn.get_class()
-
 
     # despres d'obtenir les prediccions, mirem si el que s'ha calculat és equivalent a test_labels(les classes/etiquetes verdaderes)
 
@@ -96,10 +98,8 @@ def Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, min_percenta
     # primermaent carregeum els veins i les prediccions de l'algorisme
     # despres a continaucio es crea un array de np amb les prediccions uniques: nomes un de cada
 
-
     knn.get_k_neighbours(test_imgs, k)
     predictions = knn.get_class()
-
 
     unique_classes = np.unique(predictions)
     print("Classes predicted in this batch:", unique_classes)
@@ -136,6 +136,56 @@ def Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, min_percenta
 
 
 if __name__ == "__main__":
+
+    # estem utilitzant un nou main on comptes d'utilitzar les imatges preprocessades, nosaltres mateixos cridem la funcio read_dataset de utils_data.py dins del nou main. Cal tenir en compte que el nou main no l'he fet jo
+
+    print("--- CARREGANT DADES ---")
+    train_imgs, train_labels, _, test_imgs, test_labels, _ = read_dataset(
+        root_folder="../images/", gt_json="../test/gt.json")
+
+    train_imgs_reduced = reducte_size(train_imgs)
+    test_imgs_reduced = reducte_size(test_imgs)
+
+    knn_orig = KNN(train_imgs, train_labels)
+    knn_red = KNN(train_imgs_reduced, train_labels)
+
+    acc_orig_normal, acc_orig_weighted = [], []
+    acc_red_normal, acc_red_weighted = [], []
+
+    print("--- EXECUTANT EXPERIMENTS ---")
+    k_range = range(1,3)
+    for k in (1, 3):
+        acc_n, _ = Get_shape_accuracy(knn_orig, test_imgs, test_labels, k)
+        print("s'ha carregat acc_n")
+        acc_w, _ = Get_shape_accuracy_weigted(
+            knn_orig, test_imgs, test_labels, k)
+        print("s'ha carregat acc_w")
+        acc_orig_normal.append(acc_n)
+        acc_orig_weighted.append(acc_w)
+
+        acc_n_r, _ = Get_shape_accuracy(
+            knn_red, test_imgs_reduced, test_labels, k)
+        print("s'ha carregat acc_n_r")
+        acc_w_r, _ = Get_shape_accuracy_weigted(
+            knn_red, test_imgs_reduced, test_labels, k)
+        print("s'ha carregat acc_w_r")
+        acc_red_normal.append(acc_n_r)
+        acc_red_weighted.append(acc_w_r)
+
+    print("--- RESUM FINAL ---")
+    plt.figure(figsize=(10, 6))
+    plt.plot(k_range, acc_orig_normal, label="Orig Normal")
+    plt.plot(k_range, acc_orig_weighted, label="Orig Weighted", linestyle='--')
+    plt.plot(k_range, acc_red_normal, label="Reduït Normal")
+    plt.plot(k_range, acc_red_weighted,
+             label="Reduït Weighted", linestyle='--')
+    plt.xlabel('K')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.title('Comparativa KNN: Original vs Reduït')
+    plt.grid(True)
+    plt.show()
+    """
     #abans de fer les comparaacions entre els diferents models de knn, cal carregar les dades sense pickle
     
 
@@ -338,3 +388,4 @@ if __name__ == "__main__":
     # 5. Ajustem els marges automàticament i mostrem la finestra de la gràfica
     plt.tight_layout()
     plt.show()
+    """

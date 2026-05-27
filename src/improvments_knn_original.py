@@ -138,7 +138,8 @@ def Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, min_percenta
 if __name__ == "__main__":
 
     # estem utilitzant un nou main on comptes d'utilitzar les imatges preprocessades, nosaltres mateixos cridem la funcio read_dataset de utils_data.py dins del nou main. Cal tenir en compte que el nou main no l'he fet jo
-
+    #ara caldra reduir el numero de cops que calculem els viens, ja que estem processament masses dades ara mateix
+    #aixo en 10 minuts ho tenim
     print("--- CARREGANT DADES ---")
     train_imgs, train_labels, _, test_imgs, test_labels, _ = read_dataset(
         root_folder="../images/", gt_json="../test/gt.json")
@@ -154,7 +155,8 @@ if __name__ == "__main__":
 
     print("--- EXECUTANT EXPERIMENTS ---")
     k_range = range(1,50)
-    for k in (1, 50):
+    for k in k_range:
+        print("iteration number:", k)
         acc_n, _ = Get_shape_accuracy(knn_orig, test_imgs, test_labels, k)
         print("s'ha carregat acc_n")
         acc_w, _ = Get_shape_accuracy_weigted(
@@ -177,8 +179,7 @@ if __name__ == "__main__":
     plt.plot(k_range, acc_orig_normal, label="Orig Normal")
     plt.plot(k_range, acc_orig_weighted, label="Orig Weighted", linestyle='--')
     plt.plot(k_range, acc_red_normal, label="Reduït Normal")
-    plt.plot(k_range, acc_red_weighted,
-             label="Reduït Weighted", linestyle='--')
+    plt.plot(k_range, acc_red_weighted,label="Reduït Weighted", linestyle='--')
     plt.xlabel('K')
     plt.ylabel('Accuracy')
     plt.legend()

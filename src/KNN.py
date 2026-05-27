@@ -34,8 +34,11 @@ class KNN:
         P_test = self.neighbors.shape[0]
         predictions = np.empty(P_test, dtype=self.labels.dtype)
         for i in range(P_test):
+            #enrecorda que veins_actuals es un array de una dimensio, conte les labels de les k preidccions
             veins_actuals = self.neighbors[i]
             valors, comptes = np.unique(veins_actuals, return_counts=True)
+            #dins de valors tenim els labels unics de veins_actuals, que es l'array unidimensional dels k veins que hem calculat
+            #dins de comptes tenim el numero de cops que surt cada label
             max_vots = np.max(comptes)
             guanyadors = valors[comptes == max_vots]
             if len(guanyadors) > 1:

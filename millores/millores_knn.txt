@@ -114,4 +114,10 @@ Explicació de les millores tant de funcions per analitzar les millores de preci
 		Per tant, la reducció de resolució és la tècnica guanyadora, ja que ens permet un "speed-up" de gairebé 4x en el processament sense sacrificar, i fins i tot millorant, la precisió final del sistema.
 
 
-	
+	1.2.3 Gray-scale/Z-score
+
+		Es veu que el grup model amb normalització de l'escala de grisos té la millor precisió, sobretot al principi.
+		Aquesta millora és tant bona que fins i tot amb el model knn original combinat amb la millora de gray-scale es manté amb el model knn ponderat entre.
+		Veiem que en els valors k finals, la precisió d'aquest model esta per sota de la resta de variacions de models knn.
+		De manera que aquest model knn té una precisió molt bona en els valors inicials de k, però té la degradació més gran comparat amb els altres models.
+		

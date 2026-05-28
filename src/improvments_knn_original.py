@@ -1,6 +1,32 @@
 import pickle
 import numpy as np
 # per poder carregar raelment les imatges, no utiltizar el fitxer amb les imatges ja processades.
+#remember that crop_image has already been defined
+#crop image has the following structure:
+"""
+def crop_images(images, upper, lower):
+    cropped_image = []
+    for image, top_cord, bottom_cord in zip(images, upper, lower):
+        cropped_image.append(image[top_cord[1]:bottom_cord[1], top_cord[0]:bottom_cord[0], :])
+    return np.array(cropped_image, dtype=object)
+we pass an array of images, and we pass the new dimensions that the function is going to crop in order to try to eliminate non-useful infromation: background
+now i do not know if upper is width and lower is height
+ok, we said it wrong:
+upper is top left corner coordinates: (x,y)
+lower is the bottomright corner coordeinates: (x,y)
+despres passem per cada imatge original i per cadascuna,
+la posicio 1 sempre es y i la posicio 0 sempre es x dins de cord[]
+
+i dins de image[y,x,channel], y es el height, x es l'amplada
+diem desde on comença fins on arriba la coordenada tant per y com per x
+
+Repas: cal enviar-li les imatges sense ser processades encaa i tambe dos arrays on cada lement es una tuple: uppfer i lower
+upper defineix la nova posicio del top left
+lower definiex la nova posicio de top right
+enrecorda que quan es canvia la imatge, sempre primer va y i despres x, de manera que primer coord[1] i despres coord[0]
+enrecorda també de seleccionar tot el canal de color
+
+"""
 from utils_data import read_dataset
 from KNN import KNN
 import matplotlib.pyplot as plt

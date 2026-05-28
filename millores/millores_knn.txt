@@ -1,36 +1,72 @@
 Explicació de les millores tant de funcions per analitzar les millores de precisió com funcions que realment tenen un efecte en el rendiment del programa com en precisió de l'algorism de knn:
 
-4.1 Qualitative analysis functions: Les funcions d'aquset grup serveixen per avaluar la qualitat de les classes que ha predit l'algorisme de knn. No només la predicció final (que es només una imatge) si no totes les k imatges mes proximes a la imatge de test. 
+1.1 Funcions implementades
 
-Retreival_by_shape: aquesta funcio calcula la precisió de l'algorisme només per una classe concreta passada com un string (parametre de la funció). S'avalua tots els veins de totes les imatges de test i nomes es retorna aquelles k prediccions que han superat un percentatge llindar especificat.
-Parametres de la funcio: 
-4.2 Quantitative analysis functions:Les funcions dins d'aquest grup serveixen per avaluar si les altres funcions de millora impelmentades ajudant a tenir un algorisme knn més precís.
+	4.1 Qualitative analysis functions: Les funcions d'aquset grup serveixen per avaluar la qualitat de les classes que ha predit l'algorisme de knn. No només la predicció final (que es només una imatge) si no totes les k imatges mes proximes a la imatge de test. 
 
- Get_shape_accuracy
+		Retreival_by_shape: aquesta funcio calcula la precisió de l'algorisme només per una classe concreta passada com un string (parametre de la funció). S'avalua tots els veins de totes les imatges de test i nomes es retorna aquelles k prediccions que han superat un percentatge llindar especificat.
+			Parametres de la funcio: 
+			Return:
 
-4.3 Improvments with classification methods:
 
-reducte_size-> redueix la resolució de les imatges. En la implementació del codi actual, es redueix la resolució per un factor de 4 (2 per cada dimensió)
-Parametres de la funció:
-images->un array numpy que conté imatges (pixels)
-Return:
-les images passades com a parametre amb la nova resolució
+	4.2 Quantitative analysis functions:Les funcions dins d'aquest grup serveixen per avaluar si les altres funcions de millora impelmentades ajudant a tenir un algorisme knn més precís.
 
-crop_images(ja esta implementada)
-Aquesta funció ja venia implementada. Però és important saber quan s'ha d'utiltizar i que és el que fa.
-Abans les imatges ja venien processades al carregar-les amb la llibreria pickle. Al ja venir implementades, el control que teniem sobre elles era molt limitada.
-En el codi actual, en comptes de carregar un fitxer amb les imatges ja preprocessades, es crida la funció read_dataset per llegir les imatges. Aquest canvi ens permet obtenir més control i poder apcliar la funció normalitza_z_score_grayscale.
+		Get_shape_accuracy
 
-normalitza_z_score_grayscale (intenta normalitzar l'escala de grisos/brillantor de tots els pixels de les imatges per tal de focalitzar l'algorisme knn només en la forma de la roba. En el codi original, l'escala de grisos tenia un gran efecte en el calcul de les distancies euclidianes)
-Parametres de la funció:
-images-> un array numpy que conté imatges
-Return:
-array numpy amb images amb brillantor/escala de grisos normalitzat
 
-Get_class_weighted (en comptes de calcular la predicció utiltizant vot majoritari (que segons el cas l'algorisme knn pot tornar una classe erronia), calculem la predicció mitjançant ès majoritari)
-Parametres de la funció:
-knn->objecte knn. Pot variar depenen de les train_imgs que s'han utilitzat per inicialitzar el model.
-k-> numero de veïns que l'algorisme ha de calcular per després calcular la predicció correcte no amb votació majoritaria però amb pes ponderat(segons la distancia euclidiana invers)
-Return:
-array numpy que conté totes les prediccions que ha calculat knn
+	4.3 Improvments with classification methods:
 
+		reducte_size-> redueix la resolució de les imatges. En la implementació del codi actual, es redueix la resolució per un factor de 4 (2 per cada dimensió)
+			Parametres de la funció:
+				images->un array numpy que conté imatges (pixels)
+			Return:
+				les images passades com a parametre amb la nova resolució
+
+		crop_images(ja esta implementada)
+			Aquesta funció ja venia implementada. Però és important saber quan s'ha d'utiltizar i que és el que fa.
+			Abans les imatges ja venien processades al carregar-les amb la llibreria pickle. Al ja venir implementades, el control que teniem sobre elles era molt limitada.
+			En el codi actual, en comptes de carregar un fitxer amb les imatges ja preprocessades, es crida la funció read_dataset per llegir les imatges. Aquest canvi ens permet obtenir més control i poder apcliar la funció normalitza_z_score_grayscale.
+
+		normalitza_z_score_grayscale (intenta normalitzar l'escala de grisos/brillantor de tots els pixels de les imatges per tal de focalitzar l'algorisme knn només en la forma de la roba. En el codi original, l'escala de grisos tenia un gran efecte en el calcul de les distancies euclidianes)
+			Parametres de la funció:
+				images-> un array numpy que conté imatges
+			Return:
+				array numpy amb images amb brillantor/escala de grisos normalitzat
+	
+		Get_class_weighted (en comptes de calcular la predicció utiltizant vot majoritari (que segons el cas l'algorisme knn pot tornar una classe erronia), calculem la predicció mitjançant ès majoritari)
+			Parametres de la funció:
+				knn->objecte knn. Pot variar depenen de les train_imgs que s'han utilitzat per inicialitzar el model.
+				k-> numero de veïns que l'algorisme ha de calcular per després calcular la predicció correcte no amb votació majoritaria però amb pes ponderat(segons la distancia euclidiana invers)
+			Return:
+				array numpy que conté totes les prediccions que ha calculat knn
+
+1.2 Variació del model knn (modificació de paràmetres i funcions de millora)
+
+	1.2.1 Estabilitat
+
+		Els models de knn que no aplicant ponderació calculant la predicció per vot majoritari: la classe entre els k veins que apareix més cops és la predicció del model
+		A mesura que el rang de veïns que anem acceptant va incrementant, veiem clarament una diferència entre aquells models que utilitzen ponderació per caluclar les prediccions i aquells que utilitzen vot majoritari.
+		Al augmentar el rang de veins, la votació per majoria simple pot incloure veïns que estan molt llunys i que tenen una classe assignada diferent de la classe real de la imatge original.
+		La ponderació per distància assigna menys pes aquelles imatges veines que tenen més distància euclidiana, i els que tenen més pes són aquelles imatges supervisades que estan més aprop (menys distància euclidiana).
+		Aquesta ponderació fa que el sistema sigui més robust. Per això veiem dins de la imatge de la gàfica una pendent menys inclinada pels models amb ponderació.
+
+	1.2.2 Reducció i tall
+
+		Tant per les imatges "croped"(crop_images(...)) i les imatges amb resolució disminuida(reduce_size()) s'aproximen bastant las models que no tenen aquesta reducció.
+		Aquesta diferència petita ens permet mantenir una bona precisió del model knn amb un rendiment d'execucució molt superior al no haver de processar tantes dades/pixels.
+		En el cas original, les imatges tenein les seguents dimensions: 80*60*3 = 14400
+		En utilitzar les imatges per construir el model knn que ens ha retornat crop_images del fitxer utils_data.py (estem retallant 10 pixels d'amplada i alçada). 
+		A continuació es mostra el nou top-left (upper_train/uppter_test) i el nou lower_train (lower_train/lower_test):
+			upper_train = [(5,5)]*len(train_imgs)
+			lower_train = [(55,75)]*len(train_imgs)
+			upper_test = [(5,5)]*len(test_imgs)
+			lower_test = [(55,75)]*len(test_imgs)
+		En utilitzar aquest model, les dades que hem de processar passa a ser (60-10)*(80-10) = 10.500
+		Cal anar en compte amb aquest mètode de millorament: si retallem la imatge massa, és possible perdre informació útil que serveix per distingir diferentes classes.
+
+		La funció reducte_size(images) redueix la resolució de la imatge. En la implementació d'aquesta funció veiem que per la dimensió d'altura com d'amplada, es salta de dos en dos.
+		Només en aplicar aquesta funció: (60/2)*(80/2)*3 = 30*40*3 = 3600
+
+
+		En la imatge de la gràfica veiem que hi han dos correlacions generals com a concequencia del canvi de mecanisme en escollir la predicció final del model (explicat en l'apartat 1.2.1).
+		De manera que segons les millores aplicades sobre el codi i les nostres funcions d'analasi, veiem que en general les millora amb més pes és la ponderació segona la distància euclidiana amb els k veins i la imatge original/test.

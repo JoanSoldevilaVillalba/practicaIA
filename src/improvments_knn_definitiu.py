@@ -204,10 +204,10 @@ if __name__ == "__main__":
 
     print("--- TAULA AMB MODIFICACIO DE PARAMETRES I FUNCIONS DE MILLORAMENT---")
     print("-" * 145)
-    print(f"{'K':<5} | {'Normal':<12} | {'Pesat':<12} | {'Reduit':<12} | {'Red. Pesat':<12} | {'Cropped':<12} | {'Crop. Pesat':<12} | {'Crop.Red.':<12} | {'Crop.Red. P.':<12}")
+    print(f"{'K':<5} | {'Normal':<12} | {'Pesat':<12} | {'Reduit':<12} | {'Red. Pesat':<12} | {'Cropped':<12} | {'Crop. Pesat':<12} | {'Crop.Red.':<12} | {'Crop.Red. P.':<12} | {'Gray Normal':<12} | {'Gray Pesat':<12}")
     print("-" * 145)
     for k, norm, weight, r_norm, r_weight, c_norm, c_weight, cr_norm, cr_weight, gray, gray_weight in zip(k_range, accuracies_normal, accuracies_weighted, accuracies_reduced_normal, accuracies_reduced_weighted, acc_croped_normal, acc_croped_weighted, acc_croped_red_normal, acc_croped_red_weighted, accuracies_gray_normal, accuracies_gray_weighted):
-        print(f"{k:<5} | {norm:<12.4f} | {weight:<12.4f} | {r_norm:<12.4f} | {r_weight:<12.4f} | {c_norm:<12.4f} | {c_weight:<12.4f} | {cr_norm:<12.4f} | {cr_weight:<12.4f}")
+        print(f"{k:<5} | {norm:<12.4f} | {weight:<12.4f} | {r_norm:<12.4f} | {r_weight:<12.4f} | {c_norm:<12.4f} | {c_weight:<12.4f} | {cr_norm:<12.4f} | {cr_weight:<12.4f} | {gray:<12.4f} | {gray_weight:<12.4f}")
     print("-" * 145)
     print("--- RESUM FINAL ---")
     plt.figure(figsize=(10, 6))

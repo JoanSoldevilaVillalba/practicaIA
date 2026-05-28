@@ -2,18 +2,49 @@ Explicació de les millores tant de funcions per analitzar les millores de preci
 
 1.1 Funcions implementades
 
-	4.1 Qualitative analysis functions: Les funcions d'aquset grup serveixen per avaluar la qualitat de les classes que ha predit l'algorisme de knn. No només la predicció final (que es només una imatge) si no totes les k imatges mes proximes a la imatge de test. 
+	4.1 Qualitative analysis functions: Les funcions d'aquest grup serveixen per avaluar la qualitat d'una classe concreta especificada com a parametre. No només la predicció final (que es només una imatge) si no totes les k imatges mes proximes a la imatge de test. 
 
 		Retreival_by_shape: aquesta funcio calcula la precisió de l'algorisme només per una classe concreta passada com un string (parametre de la funció). S'avalua tots els veins de totes les imatges de test i nomes es retorna aquelles k prediccions que han superat un percentatge llindar especificat.
 			Parametres de la funcio: 
+			knn-> el model knn que s'està utilitznat
+			train_imgs->les imatges ja supervisades
+			test_imgs->són les imatges de test. Són les imatges que l'algorisme hauria de predir.
+			k-> número de veïns (rang)
+			min_percentatge-> percentatge llindar que s'ha de superar.
 			Return:
-
+				retreived_results-> al final es retorna una llista de tuples. La tuple conté el seguent:
+					test_imgs[i]-> la imatge de test on l'algorisme ha de calcular la seva classe
+					predictions[i]-> la predicció final que ha calculat l'algorisme de la imatge test_imgs[i]
+					neighbour_images-> son les k imatges que ha predit l'algorisme
+					percentatge-> percentatge correcta dels k veins calculats
+					knn.neighbours-> atribut de l'objecte knn.
+			
+				
 
 	4.2 Quantitative analysis functions:Les funcions dins d'aquest grup serveixen per avaluar si les altres funcions de millora impelmentades ajudant a tenir un algorisme knn més precís.
 
-		Get_shape_accuracy
+		Get_shape_accuracy: aquesta funció calcula la precisió de l'algorisme per totes les imatges de test. La predicció retornada no és una predicció individual de cada imatge de test, és una predicció global de totes les imatges de test.
+			Parametres de la funció:
+				knn-> model de knn
+				test_labels-> son les classes reals de les imatges de test previament carregades
+				k-> numero de veïns (rang)
+			Return:
+				(accuracy, predictions)-> una tuple on el primer element és la precisió global i predictions son les precisions finals de l'algorisme
+
+		Get_shape_accuracy_weighted: Aquesta funció és igual que Get_shape_accuracy però utilitza ponderació, no vots majoritaris. Dins de la funció es crida Get_class_weighted.
+			Parametres de la funció:
+
+				knn-> model knn
+				test_labels-> les classes correctes de les imatges de test
+				k-> el rang de veïns
+
+			Return:
+
+				(accuracy, predictions)-> una tuple on el primer element és la precisió global i predictions son les precisions finals de l'algorisme
 
 
+
+		
 	4.3 Improvments with classification methods:
 
 		reducte_size-> redueix la resolució de les imatges. En la implementació del codi actual, es redueix la resolució per un factor de 4 (2 per cada dimensió)
@@ -42,21 +73,31 @@ Explicació de les millores tant de funcions per analitzar les millores de preci
 
 1.2 Variació del model knn (modificació de paràmetres i funcions de millora)
 
-	1.2.1 Estabilitat
+	1.2.1 Model original vs Model amb pes ponderat
 
-		Els models de knn que no aplicant ponderació calculant la predicció per vot majoritari: la classe entre els k veins que apareix més cops és la predicció del model
+		Els models de knn que no aplicant ponderació, calculant la predicció per vot majoritari: la classe entre els k veins que apareix més cops és la predicció del model.
 		A mesura que el rang de veïns que anem acceptant va incrementant, veiem clarament una diferència entre aquells models que utilitzen ponderació per caluclar les prediccions i aquells que utilitzen vot majoritari.
-		Al augmentar el rang de veins, la votació per majoria simple pot incloure veïns que estan molt llunys i que tenen una classe assignada diferent de la classe real de la imatge original.
+		Al augmentar el rang de veins, la votació per majoria simple pot incloure veïns que estan molt llunys i que tenen una classe assignada diferent de la classe real de la imatge original, resultant una predicció incorrecta en alguns casos.
 		La ponderació per distància assigna menys pes aquelles imatges veines que tenen més distància euclidiana, i els que tenen més pes són aquelles imatges supervisades que estan més aprop (menys distància euclidiana).
 		Aquesta ponderació fa que el sistema sigui més robust. Per això veiem dins de la imatge de la gàfica una pendent menys inclinada pels models amb ponderació.
 
 	1.2.2 Reducció i tall
 
-		Tant per les imatges "croped"(crop_images(...)) i les imatges amb resolució disminuida(reduce_size()) s'aproximen bastant las models que no tenen aquesta reducció.
+
+		En analitzar les dades mostrades (taula), observem que les tècniques de millora d'eficiència no només redueixen la càrrega computacional, sinó que també mantenen una precisió molt bona respecte al model original
+		
+		Anàlasi del "Cropping":
+			En observar les dades per a K = 1, veiem que el model original té un 0.9201 i el "Cropped" té un 0.9154. 
+			Tot i perdre informació (passem de 14400 a 10500 pixels), la pèruda de precisió és mínima(menys d'un 0.5%).
+
+		Anàlasi del "Redució de resolució" (reducte_size): Aquest model és el més eficient: processant 3600 pixels (25% de les dades originals).
+
+
+		Tant per les imatges "croped"(crop_images(...)) i les imatges amb resolució disminuida(reduce_size()) s'aproximen bastant models que no tenen aquesta reducció.
 		Aquesta diferència petita ens permet mantenir una bona precisió del model knn amb un rendiment d'execucució molt superior al no haver de processar tantes dades/pixels.
 		En el cas original, les imatges tenein les seguents dimensions: 80*60*3 = 14400
 		En utilitzar les imatges per construir el model knn que ens ha retornat crop_images del fitxer utils_data.py (estem retallant 10 pixels d'amplada i alçada). 
-		A continuació es mostra el nou top-left (upper_train/uppter_test) i el nou lower_train (lower_train/lower_test):
+		A continuació es mostra el nou top-left (upper_train/uppter_test) i el nou bottom-right (lower_train/lower_test):
 			upper_train = [(5,5)]*len(train_imgs)
 			lower_train = [(55,75)]*len(train_imgs)
 			upper_test = [(5,5)]*len(test_imgs)
@@ -65,8 +106,12 @@ Explicació de les millores tant de funcions per analitzar les millores de preci
 		Cal anar en compte amb aquest mètode de millorament: si retallem la imatge massa, és possible perdre informació útil que serveix per distingir diferentes classes.
 
 		La funció reducte_size(images) redueix la resolució de la imatge. En la implementació d'aquesta funció veiem que per la dimensió d'altura com d'amplada, es salta de dos en dos.
-		Només en aplicar aquesta funció: (60/2)*(80/2)*3 = 30*40*3 = 3600
+		Només en aplicar aquesta funció: (60/2)*(80/2)*3 = 30*40*3 = 3600. Es veu que pel cas K = 1 (i en altres casos), el model que utilitza les imatges que retorna reducte_size té una precisió superior al model original. Això suggereix que la reducció elimina soroll i ajuda al model a generalitzar millor en certs valors de K.
+
+		També tenim  un model que combina els dos mecansimes de reducció de dimensió i encara manté una bona precisió i milllorant l'eficiencia del programa.
+
+		Aquestes dades demostren que el model "Reduced" no només és més eficient, sinó que també és més estable i precís que el model original en valors de k elevats.
+		Per tant, la reducció de resolució és la tècnica guanyadora, ja que ens permet un "speed-up" de gairebé 4x en el processament sense sacrificar, i fins i tot millorant, la precisió final del sistema.
 
 
-		En la imatge de la gràfica veiem que hi han dos correlacions generals com a concequencia del canvi de mecanisme en escollir la predicció final del model (explicat en l'apartat 1.2.1).
-		De manera que segons les millores aplicades sobre el codi i les nostres funcions d'analasi, veiem que en general les millora amb més pes és la ponderació segona la distància euclidiana amb els k veins i la imatge original/test.
+	

@@ -116,6 +116,9 @@ Explicació de les millores tant de funcions per analitzar les millores de preci
 
 	1.2.3 Gray-scale/Z-score
 
+		Aquesta millora es centra en la funció normalitza_z_score_grayscale trobada dins de improvments_knn_definitiu.py
+		La millora es basa en intentar eliminar el constrast entre els diferents pixels per poder centrar l'algorisme en lo que realment importa: la forma de la roba.
+		La normalització de l'escala de grisos és important ja que la distancia euclidiana es basa justament en els pixels de la imatge i per tant en la seva brillantor/escala de grisos.
 		Es veu que el grup model amb normalització de l'escala de grisos té la millor precisió, sobretot al principi.
 		Aquesta millora és tant bona que fins i tot amb el model knn original combinat amb la millora de gray-scale es manté amb el model knn ponderat entre.
 		Veiem que en els valors k finals, la precisió d'aquest model esta per sota de la resta de variacions de models knn.

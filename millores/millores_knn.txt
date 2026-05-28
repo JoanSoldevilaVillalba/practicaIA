@@ -1,0 +1,19 @@
+Explicació de les millores tant de funcions per analitzar les millores de precisió com funcions que realment tenen un efecte en el rendiment del programa com en precisió de l'algorism de knn:
+
+4.1 Qualitative analysis functions: Les funcions d'aquset grup serveixen per avaluar la qualitat de les classes que ha predit l'algorisme de knn. No només la predicció final (que es només una imatge) si no totes les k imatges mes proximes a la imatge de test. 
+
+ Retreival_by_shape: aquesta funcio calcula la precisió de l'algorisme només per una classe concreta passada com un string (parametre de la funció). S'avalua tots els veins de totes les imatges de test i nomes es retorna aquelles k prediccions que han superat un percentatge llindar especificat.
+
+4.2 Quantitative analysis functions:Les funcions dins d'aquest grup serveixen per avaluar si les altres funcions de millora impelmentades ajudant a tenir un algorisme knn més precís.
+
+ Get_shape_accuracy
+
+4.3 Improvments with classification methods:
+
+ reducte_size-> redueix la resolució de les imatges. En la implementació del codi actual, es redueix la resolució per un factor de 4 (2 per cada dimensió)
+ crop_images(ja esta implementada)
+ normalitza_illuminacio (intenta normalitzar l'escala de grisos/brillantor de tots els pixels de les imatges per tal de focalitzar l'algorisme knn només en la forma de la roba. En el codi original, l'escala de grisos tenia un gran efecte en el calcul de les distancies euclidianes)
+ Get_class_weighted (en comptes de calcular la predicció utiltizant vot majoritari (que segons el cas l'algorisme knn pot tornar una classe erronia), calculem la predicció mitjançant ès majoritari)
+
+4.4 Funcions implementades que no s'utilitzaran:
+ Les funcions que acaben amb: _diversos

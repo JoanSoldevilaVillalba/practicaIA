@@ -129,6 +129,9 @@ if __name__ == "__main__":
     print("--- CARREGANT DADES ---")
     train_imgs, train_labels, _, test_imgs, test_labels, _ = read_dataset(root_folder='../images/', gt_json='../test/gt.json')
 
+    k_maxim = 99
+
+
     upper_train = [(5,5)]*len(train_imgs)
     lower_train = [(55,75)]*len(train_imgs)
     upper_test = [(5,5)]*len(test_imgs)
@@ -137,6 +140,12 @@ if __name__ == "__main__":
     croped_test_imgs= crop_images(test_imgs, upper_test, lower_test)
     croped_train_reduced_imgs = reducte_size(croped_train_imgs)
     croped_test_reduced_imgs = reducte_size(croped_test_imgs)
+
+    train_imgs_gray = normalitza_z_score_grayscale(train_imgs)
+    test_imgs_gray = normalitza_z_score_grayscale(test_imgs)
+
+    knn_gray = KNN(train_imgs_gray, train_labels)
+    knn_gray.get_k_neighbours(test_imgs_gray, k_maxim)
 
     train_imgs_reduced = reducte_size(train_imgs)
     test_imgs_reduced = reducte_size(test_imgs)
@@ -148,7 +157,6 @@ if __name__ == "__main__":
 
 
     print("--- CALCULANT MATRIUS DE DISTÀNCIES (Pre-càlcul) ---")
-    k_maxim = 99
     knn_orig.get_k_neighbours(test_imgs, k_maxim)
     knn_red.get_k_neighbours(test_imgs_reduced, k_maxim)
     knn_croped.get_k_neighbours(croped_test_imgs,k_maxim)
@@ -161,7 +169,17 @@ if __name__ == "__main__":
     accuracies_reduced_weighted = []
     acc_croped_normal, acc_croped_weighted = [],[]
     acc_croped_red_normal, acc_croped_red_weighted = [],[]
+    accuracies_gray_normal = []
+    accuracies_gray_weighted = []
+
     for k in k_range:
+        acc_g_n, _ = Get_shape_accuracy(knn_gray, test_labels, k)
+        acc_g_w, _ = Get_shape_accuracy_weigted(knn_gray, test_labels, k)
+        accuracies_gray_normal.append(acc_g_n)
+        accuracies_gray_weighted.append(acc_g_w)
+
+
+
         acc_n, _ = Get_shape_accuracy(knn_orig, test_labels, k)
         acc_w, _ = Get_shape_accuracy_weigted(knn_orig, test_labels, k)
         accuracies_normal.append(acc_n)
@@ -188,7 +206,7 @@ if __name__ == "__main__":
     print("-" * 145)
     print(f"{'K':<5} | {'Normal':<12} | {'Pesat':<12} | {'Reduit':<12} | {'Red. Pesat':<12} | {'Cropped':<12} | {'Crop. Pesat':<12} | {'Crop.Red.':<12} | {'Crop.Red. P.':<12}")
     print("-" * 145)
-    for k, norm, weight, r_norm, r_weight, c_norm, c_weight, cr_norm, cr_weight in zip(k_range, accuracies_normal, accuracies_weighted, accuracies_reduced_normal, accuracies_reduced_weighted, acc_croped_normal, acc_croped_weighted, acc_croped_red_normal, acc_croped_red_weighted):
+    for k, norm, weight, r_norm, r_weight, c_norm, c_weight, cr_norm, cr_weight, gray, gray_weight in zip(k_range, accuracies_normal, accuracies_weighted, accuracies_reduced_normal, accuracies_reduced_weighted, acc_croped_normal, acc_croped_weighted, acc_croped_red_normal, acc_croped_red_weighted, accuracies_gray_normal, accuracies_gray_weighted):
         print(f"{k:<5} | {norm:<12.4f} | {weight:<12.4f} | {r_norm:<12.4f} | {r_weight:<12.4f} | {c_norm:<12.4f} | {c_weight:<12.4f} | {cr_norm:<12.4f} | {cr_weight:<12.4f}")
     print("-" * 145)
     print("--- RESUM FINAL ---")
@@ -202,6 +220,8 @@ if __name__ == "__main__":
     plt.plot(k_range, acc_croped_weighted, label="Croped Weighted", linestyle='--')
     plt.plot(k_range, acc_croped_red_normal, label="Croped reduced")
     plt.plot(k_range, acc_croped_red_weighted, label="Croped reduced Weighted", linestyle='--')
+    plt.plot(k_range, accuracies_gray_normal, label="Grayscale")
+    plt.plot(k_range, accuracies_gray_weighted, label="Grayscale Weighted", linestyle='--')
 
     plt.xlabel('K')
     plt.ylabel('Accuracy')

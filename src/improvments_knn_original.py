@@ -30,7 +30,7 @@ enrecorda també de seleccionar tot el canal de color
 from utils_data import read_dataset
 from KNN import KNN
 import matplotlib.pyplot as plt
-
+from utils_data import crop_images
 
 # caldra modificar una mica el codi: dins de cada funcio es calcula de manera repetida les prediccions de les imatges de test_imgs, no es necessari fer aixo, només cal fer-ho un cop dins del main (if __name__=="__main__")
 # aquesta modificació no es fa pero dins de Get_class_weighted, ja que aplica l'algorisme knn amb pes ponderat, no vot majoritari; també Get_shape_accuracy_weighted
@@ -161,23 +161,39 @@ def Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, min_percenta
     return retrieved_results
 
 
+#def call_crop_images(train_imgs, test_imgs):
+
 if __name__ == "__main__":
 
+    print("--- CARREGANT DADES ---")
+    train_imgs, train_labels, _, test_imgs, test_labels, _ = read_dataset(root_folder="../images/", gt_json="../test/gt.json")
     # estem utilitzant un nou main on comptes d'utilitzar les imatges preprocessades, nosaltres mateixos cridem la funcio read_dataset de utils_data.py dins del nou main. Cal tenir en compte que el nou main no l'he fet jo
     #ara caldra reduir el numero de cops que calculem els viens, ja que estem processament masses dades ara mateix
     #aixo en 10 minuts ho tenim
-    print("--- CARREGANT DADES ---")
-    train_imgs, train_labels, _, test_imgs, test_labels, _ = read_dataset(
-        root_folder="../images/", gt_json="../test/gt.json")
+
+    upper_train = [(5,5)]*len(train_imgs)
+    lower_train = [(55,75)]*len(train_imgs)
+    upper_test = [(5,5)]*len(test_imgs)
+    lower_test = [(55,75)]*len(test_imgs)
+    croped_train_imgs=crop_images(train_imgs, upper_train, lower_train)
+    croped_test_imgs= crop_images(test_imgs, upper_test, lower_test)
+    croped_train_reduced_imgs = reducte_size(croped_train_imgs)
+    croped_test_reduced_imgs = reducte_size(croped_test_imgs)
+    #ara caldra fer una valoracio de croped images amb normal, weighted
+    #farem combinacions de dos en dos i ja esta, no ens complicarem molt
+    acc_croped_normal, acc_croped_weighted = [],[]
+    acc_croped_red_normal, acc_croped_red_weighted = [],[]
 
     train_imgs_reduced = reducte_size(train_imgs)
     test_imgs_reduced = reducte_size(test_imgs)
 
     knn_orig = KNN(train_imgs, train_labels)
     knn_red = KNN(train_imgs_reduced, train_labels)
-
+    knn_croped = KNN(croped_train_imgs, train_labels)
+    knn_croped_reduced = KNN(croped_train_reduced_imgs, train_labels)
     acc_orig_normal, acc_orig_weighted = [], []
     acc_red_normal, acc_red_weighted = [], []
+    
 
     print("--- EXECUTANT EXPERIMENTS ---")
     k_range = range(1,50)
@@ -185,20 +201,40 @@ if __name__ == "__main__":
         print("iteration number:", k)
         acc_n, _ = Get_shape_accuracy(knn_orig, test_imgs, test_labels, k)
         print("s'ha carregat acc_n")
-        acc_w, _ = Get_shape_accuracy_weigted(
-            knn_orig, test_imgs, test_labels, k)
+        acc_w, _ = Get_shape_accuracy_weigted(knn_orig, test_imgs, test_labels, k)
         print("s'ha carregat acc_w")
         acc_orig_normal.append(acc_n)
         acc_orig_weighted.append(acc_w)
 
-        acc_n_r, _ = Get_shape_accuracy(
-            knn_red, test_imgs_reduced, test_labels, k)
+        acc_n_r, _ = Get_shape_accuracy(knn_red, test_imgs_reduced, test_labels, k)
         print("s'ha carregat acc_n_r")
-        acc_w_r, _ = Get_shape_accuracy_weigted(
-            knn_red, test_imgs_reduced, test_labels, k)
+        acc_w_r, _ = Get_shape_accuracy_weigted(knn_red, test_imgs_reduced, test_labels, k)
         print("s'ha carregat acc_w_r")
         acc_red_normal.append(acc_n_r)
         acc_red_weighted.append(acc_w_r)
+
+        # --- BLOC ORIGINAL I REDUÏT (Que ja tenies bé) ---
+        acc_n_r, _ = Get_shape_accuracy(knn_red, test_imgs_reduced, test_labels, k)
+        acc_w_r, _ = Get_shape_accuracy_weigted(knn_red, test_imgs_reduced, test_labels, k)
+        acc_red_normal.append(acc_n_r)
+        acc_red_weighted.append(acc_w_r)
+
+        # --- BLOC CROPPED (CORREGIT) ---
+        # Creem variables temporals (ac_cn, ac_cr, etc.) per no aixafar les llistes
+        ac_cn, _ = Get_shape_accuracy(knn_croped, croped_test_imgs, test_labels, k)
+        ac_cr, _ = Get_shape_accuracy(knn_croped_reduced, croped_test_reduced_imgs, test_labels, k)
+        ac_cnw, _ = Get_shape_accuracy_weigted(knn_croped, croped_test_imgs, test_labels, k)
+        
+        # Aquí hi havia els typos de noms solucionats:
+        ac_crw, _ = Get_shape_accuracy_weigted(knn_croped_reduced, croped_test_reduced_imgs, test_labels, k)
+        
+        # Ara fem els appends a les llistes correctes:
+        acc_croped_normal.append(ac_cn)
+        acc_croped_weighted.append(ac_cnw)
+        acc_croped_red_normal.append(ac_cr)
+        acc_croped_red_weighted.append(ac_crw)
+
+
 
     print("--- RESUM FINAL ---")
     plt.figure(figsize=(10, 6))
@@ -206,10 +242,17 @@ if __name__ == "__main__":
     plt.plot(k_range, acc_orig_weighted, label="Orig Weighted", linestyle='--')
     plt.plot(k_range, acc_red_normal, label="Reduït Normal")
     plt.plot(k_range, acc_red_weighted,label="Reduït Weighted", linestyle='--')
+
+    plt.plot(k_range, acc_croped_normal, label="Croped")
+    plt.plot(k_range, acc_croped_weighted, label="Croped Weighted", linestyle='--')
+    plt.plot(k_range, acc_croped_red_normal, label="Croped reduced")
+    plt.plot(k_range, acc_croped_red_weighted,label="Croped reduced Weighted", linestyle='--')
+
+
     plt.xlabel('K')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.title('Comparativa KNN: Original vs Reduït')
+    plt.title('Comparativa KNN: Original vs Reduït vs Croped')
     plt.grid(True)
     plt.show()
     """

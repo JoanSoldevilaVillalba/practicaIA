@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 def reducte_size(images):
     return images[:, ::2, ::2]
 
-
 def Get_class_weighted(knn, k):
     veins_retallats = knn.neighbors[:, :k]
     distancies_retallades = knn.distancies[:, :k]
@@ -32,13 +31,11 @@ def Get_class_weighted(knn, k):
 
     return np.array(preds)
 
-
 def Get_shape_accuracy_weigted(knn, test_labels, k):
     predictions = Get_class_weighted(knn, k)
     correct_predictions = np.sum(predictions == test_labels)
     accuracy = correct_predictions / len(test_labels)
     return accuracy, predictions
-
 
 def Get_shape_accuracy(knn, test_labels, k):
 
@@ -103,37 +100,67 @@ def Retrieval_by_shape(knn, train_imgs, test_imgs, query_string, k, min_percenta
     retrieved_results.sort(key=lambda x: x[3], reverse=True)
     return retrieved_results
 
+import numpy as np
+
+def normalitza_z_score_grayscale(images):
+    #assegurem que les imatges passades com a parametre estan representades en float64
+    #a contianucio calculem la mitjana de brillantor de cadascuna de les imatges i es guarda dins de la llista mitjana(array numpy)
+    #despres es calcula la desviacio de cada imatge, es a dir, com es difereixen la brillantor dels diferents pixels 
+    #Es a dir, desviacio mesura el contrasnt de la imatge, ens diu com de lluny els pixels de la imatge estan de la propia mitjana de brillantor.
+    #si tenim una desviacio baixa: els pixels tenen gariabe la mateixa brillantor, es a dir, no hi ha molta diferncia en brillantor, tots son molt grisos per exemple, o molt blancs.
+    #si tenim una desviacioi alta hi ha molt de contrast, hi han molts pixels amb diferents nivells de brillantor: un blancs i altres grisos
+    #Al final estem forçant el knn a fixar-se nomoés en la forma geometrica i no tant en les diferentes tonalitats de l'escala de grisos que tenen les imatges.
+    """
+    Primer restem de cada pixel de la imatge la mitjana de brilantor, estem centrant el brillantor a zero, quan abans estava centrat en la mitjana de brillantor. Si per exemple la imatge s'ha fet amb molta llum, aquest calcul ho elimina: estem noramlitzant totes les imatges perque estiguin centrades a brillantor zero.
+    Despres es divideix entre la desviació, s'iguala el contrast
+    """
+    imgs_float = images.astype(np.float64)
+    mitjana = np.mean(imgs_float, axis=(1, 2), keepdims=True)
+    desviacio = np.std(imgs_float, axis=(1, 2), keepdims=True)
+    images_normalitzades = (imgs_float - mitjana) / (desviacio + 1e-5)
+    return images_normalitzades
 
 if __name__ == "__main__":
     from utils_data import read_dataset
     from KNN import KNN
     import matplotlib.pyplot as plt
     import numpy as np
-
+    from utils_data import crop_images
     print("--- CARREGANT DADES ---")
-    train_imgs, train_labels, _, test_imgs, test_labels, _ = read_dataset(
-        root_folder='../images/', 
-        gt_json='../test/gt.json'
-    )
+    train_imgs, train_labels, _, test_imgs, test_labels, _ = read_dataset(root_folder='../images/', gt_json='../test/gt.json')
+
+    upper_train = [(5,5)]*len(train_imgs)
+    lower_train = [(55,75)]*len(train_imgs)
+    upper_test = [(5,5)]*len(test_imgs)
+    lower_test = [(55,75)]*len(test_imgs)
+    croped_train_imgs=crop_images(train_imgs, upper_train, lower_train)
+    croped_test_imgs= crop_images(test_imgs, upper_test, lower_test)
+    croped_train_reduced_imgs = reducte_size(croped_train_imgs)
+    croped_test_reduced_imgs = reducte_size(croped_test_imgs)
 
     train_imgs_reduced = reducte_size(train_imgs)
     test_imgs_reduced = reducte_size(test_imgs)
 
     knn_orig = KNN(train_imgs, train_labels)
     knn_red = KNN(train_imgs_reduced, train_labels)
+    knn_croped = KNN(croped_train_imgs, train_labels)
+    knn_croped_reduced = KNN(croped_train_reduced_imgs, train_labels)
+
 
     print("--- CALCULANT MATRIUS DE DISTÀNCIES (Pre-càlcul) ---")
-    k_maxim = 49
+    k_maxim = 99
     knn_orig.get_k_neighbours(test_imgs, k_maxim)
     knn_red.get_k_neighbours(test_imgs_reduced, k_maxim)
-
+    knn_croped.get_k_neighbours(croped_test_imgs,k_maxim)
+    knn_croped_reduced.get_k_neighbours(croped_test_reduced_imgs, k_maxim)
     print("--- EXECUTANT EXPERIMENTS ---")
-    k_range = list(range(1, 50))
+    k_range = list(range(1, 100))
     accuracies_normal = []
     accuracies_weighted = []
     accuracies_reduced_normal = []
     accuracies_reduced_weighted = []
-
+    acc_croped_normal, acc_croped_weighted = [],[]
+    acc_croped_red_normal, acc_croped_red_weighted = [],[]
     for k in k_range:
         acc_n, _ = Get_shape_accuracy(knn_orig, test_labels, k)
         acc_w, _ = Get_shape_accuracy_weigted(knn_orig, test_labels, k)
@@ -144,17 +171,34 @@ if __name__ == "__main__":
         acc_w_r, _ = Get_shape_accuracy_weigted(knn_red, test_labels, k)
         accuracies_reduced_normal.append(acc_n_r)
         accuracies_reduced_weighted.append(acc_w_r)
+        #a continaucio tenim per cropped:
 
-    print("--- GENERANT GRÀFICA ---")
+        ac_cn, _ = Get_shape_accuracy(knn_croped, test_labels, k)
+        ac_cr, _ = Get_shape_accuracy(knn_croped_reduced, test_labels, k)
+        ac_cnw, _ = Get_shape_accuracy_weigted(knn_croped, test_labels, k)
+
+        ac_crw, _ = Get_shape_accuracy_weigted(knn_croped_reduced,test_labels,k)
+
+        acc_croped_normal.append(ac_cn)
+        acc_croped_weighted.append(ac_cnw)
+        acc_croped_red_normal.append(ac_cr)
+        acc_croped_red_weighted.append(ac_crw)
+
+    print("--- RESUM FINAL ---")
     plt.figure(figsize=(10, 6))
-    plt.plot(k_range, accuracies_normal, label='Original (Majoria simple)')
-    plt.plot(k_range, accuracies_weighted, label='Original (Ponderat)', linestyle='--')
-    plt.plot(k_range, accuracies_reduced_normal, label='Reduït (Majoria simple)')
-    plt.plot(k_range, accuracies_reduced_weighted, label='Reduït (Ponderat)', linestyle='--')
-    
-    plt.title('Comparativa Precisió KNN (Original vs Reduït)')
-    plt.xlabel('K (Veïns)')
+    plt.plot(k_range, accuracies_normal, label="Orig Normal")
+    plt.plot(k_range, accuracies_weighted, label="Orig Weighted", linestyle='--')
+    plt.plot(k_range, accuracies_reduced_normal, label="Reduït Normal")
+    plt.plot(k_range, accuracies_reduced_weighted, label="Reduït Weighted", linestyle='--')
+
+    plt.plot(k_range, acc_croped_normal, label="Croped")
+    plt.plot(k_range, acc_croped_weighted, label="Croped Weighted", linestyle='--')
+    plt.plot(k_range, acc_croped_red_normal, label="Croped reduced")
+    plt.plot(k_range, acc_croped_red_weighted, label="Croped reduced Weighted", linestyle='--')
+
+    plt.xlabel('K')
     plt.ylabel('Accuracy')
     plt.legend()
+    plt.title('Comparativa KNN: Original vs Reduït vs Croped')
     plt.grid(True)
     plt.show()
